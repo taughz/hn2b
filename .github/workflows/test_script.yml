@@ -1,0 +1,21 @@
+# test.yml
+
+# Copyright (c) 2024 Tim Perkins
+
+name: 'Test HN2B Script'
+
+on: ['push']
+
+jobs:
+  test:
+    name: >-
+      Test HN2B Script
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@v4'
+      - name: 'Install Regctl'
+        uses: 'regclient/actions/regctl-installer@main'
+      - name: 'Run Tests'
+        run: |
+          make test

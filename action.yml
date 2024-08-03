@@ -1,0 +1,111 @@
+# action.yml
+
+# Copyright (c) 2024 Tim Perkins
+
+name: >-
+  Docker HN2B
+
+description: >-
+  How Not To Build Docker Images
+
+inputs:
+  image:
+    description: >-
+      The target image `repo:tag` name. The tag is optional, and if given, the
+      resulting image will be additionally tagged with that tag. The image will
+      always be tagged with the generated tag, regardless of the given tag.
+    required: true
+  context:
+    description: >-
+      A directory to use as the Docker build context. The Dockerfile must also
+      be located somewhere within this directory. The path can be relative to
+      the current working directory, typically the root of the repository.
+    required: true
+  dockerfile:
+    description: >-
+      The Dockerfile to use for the build. The path can be relative to the
+      current working directory, typically the root of the repository.
+    required: false
+    default: 'Dockerfile'
+  base-image:
+    description: >-
+      The optional base image `repo:tag` name. If given, this will be supplied
+      as a Docker build argument BASE_IMAGE. It will also participate in tag
+      generation.
+    required: false
+    default: ''
+  build-args:
+    description: >-
+      The optional arguments to supply to the Docker build. They will also
+      participate in tag generation. (All build arguments will actually be
+      appended to the build context in a special file `.buildargs`.)
+    required: false
+    default: ''
+  secrets:
+    description: >-
+      The secrets to supply to the Docker build. They will not participate in
+      tag generation.
+    required: false
+    default: ''
+  push:
+    description: >-
+      Push the container after building.
+    required: false
+    default: false
+  registry-user:
+    description: >-
+      The user to use in authenticating to the Docker registry.
+    required: false
+    default: '${{ github.actor }}'
+  registry-pass:
+    description: >-
+      The password (or token) to use in authenticating to the Docker registry.
+    required: false
+    default: ''
+  no-cache:
+    description: >-
+      Force a rebuild of the image, and do not use cache.
+    required: false
+    default: false
+  name-only:
+    description: >-
+      Only generate the tag, and print the resulting image name. Do not actually
+      build the image.
+    required: false
+    default: false
+
+outputs:
+  image:
+    description: >-
+      The generated image `repo:tag` name.
+    value: '${{ steps.hn2b.outputs.GENERATED_IMAGE }}'
+  was-pulled:
+    description: >-
+      True if the image was pulled, false otherwise.
+    value: '${{ steps.hn2b.outputs.WAS_PULLED }}'
+  was-built:
+    description: >-
+      True if the image was built, false otherwise.
+    value: '${{ steps.hn2b.outputs.WAS_BUILT }}'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: >-
+        How Not To Build Docker Images
+      id: 'hn2b'
+      shell: 'bash'
+      env:
+        TARGET_IMAGE: '${{ inputs.image }}'
+        CONTEXT_DIR: '${{ inputs.context }}'
+        DOCKERFILE: '${{ inputs.dockerfile }}'
+        BASE_IMAGE: '${{ inputs.base-image }}'
+        BUILD_ARGS: '${{ inputs.build-args }}'
+        SECRETS: '${{ inputs.secrets }}'
+        DO_PUSH: '${{ inputs.push }}'
+        REGISTRY_USER: '${{ inputs.registry-user }}'
+        REGISTRY_PASS: '${{ inputs.registry-pass }}'
+        NO_CACHE: '${{ inputs.no-cache }}'
+        NAME_ONLY: '${{ inputs.name-only }}'
+      run: |
+        $GITHUB_ACTION_PATH/hn2b.sh --github >> $GITHUB_OUTPUT

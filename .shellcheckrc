@@ -1,0 +1,2 @@
+disable=SC2046,SC2086,SC2206    # Because quoting everything is overkill
+disable=SC2166                  # Because -a and -o are fine
