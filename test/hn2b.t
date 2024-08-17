@@ -15,10 +15,10 @@ Usage should print if no arguments are given:
 
   $ ./hn2b.sh
   Usage: hn2b.sh [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-              [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-p | --push]
-              [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
-              [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-              [-h | --help]
+              [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-o | --skip-pull]
+              [-p | --push] [-u | --user USER] [-r | --pass PASS]
+              [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
+              [-x | --github ] [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -28,6 +28,7 @@ Usage should print if no arguments are given:
       -b | --base BASE_IMAGE  Base image to use for the build
       -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
       -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
+      -o | --skip-pull        Just exit instead of pulling remote images
       -p | --push             Push the newly built container
       -u | --user USER        User to use during registry login
       -r | --pass PASS        Password or token to use during registry login
@@ -47,10 +48,10 @@ Using the '--help' option should also show usage:
 
   $ ./hn2b.sh --help
   Usage: hn2b.sh [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-              [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-p | --push]
-              [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
-              [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-              [-h | --help]
+              [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-o | --skip-pull]
+              [-p | --push] [-u | --user USER] [-r | --pass PASS]
+              [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
+              [-x | --github ] [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -60,6 +61,7 @@ Using the '--help' option should also show usage:
       -b | --base BASE_IMAGE  Base image to use for the build
       -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
       -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
+      -o | --skip-pull        Just exit instead of pulling remote images
       -p | --push             Push the newly built container
       -u | --user USER        User to use during registry login
       -r | --pass PASS        Password or token to use during registry login

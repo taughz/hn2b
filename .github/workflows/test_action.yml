@@ -158,3 +158,41 @@ jobs:
               echo "Expected the image to NOT be built!" >&2
               exit 1
           fi
+
+  test_skip_pull:
+    name: >-
+      Test HN2B Action (Skip Pull)
+    runs-on: 'ubuntu-latest'
+    needs: ['test']
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@v4'
+      - name: 'Build (Or Not Pull) Image Again'
+        id: 'skip-pull-image'
+        uses: './'
+        with:
+          image: 'ghcr.io/taughz/hn2b-test'
+          context: 'test/image'
+          build-args: |
+            FOO=${{ needs.test.outputs.random1 }}
+            BAR=${{ needs.test.outputs.random2 }}
+          registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
+          skip-pull: true
+      - name: 'Check Not Pulled Image'
+        run: |
+          IMAGE=${{ needs.test.outputs.image }}
+          BUILT_IMAGE=${{ steps.skip-pull-image.outputs.image }}
+          if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
+              echo "Built image did not match expected image: $BUILT_IMAGE" >&2
+              exit 1
+          fi
+          WAS_PULLED=${{ steps.skip-pull-image.outputs.was-pulled }}
+          if [ "$WAS_PULLED" != "true" ]; then
+              echo "Expected the image to be pulled!" >&2
+              exit 1
+          fi
+          WAS_BUILT=${{ steps.skip-pull-image.outputs.was-built }}
+          if [ "$WAS_BUILT" != "false" ]; then
+              echo "Expected the image to NOT be built!" >&2
+              exit 1
+          fi

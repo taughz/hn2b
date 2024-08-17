@@ -47,6 +47,12 @@ inputs:
       tag generation.
     required: false
     default: ''
+  skip-pull:
+    description: >-
+      Check if the image is available on the registry as usual, but if it is
+      available, don't actually pull the image.
+    required: false
+    default: false
   push:
     description: >-
       Push the container after building.
@@ -102,6 +108,7 @@ runs:
         BASE_IMAGE: '${{ inputs.base-image }}'
         BUILD_ARGS: '${{ inputs.build-args }}'
         SECRETS: '${{ inputs.secrets }}'
+        SKIP_PULL: '${{ inputs.skip-pull }}'
         DO_PUSH: '${{ inputs.push }}'
         REGISTRY_USER: '${{ inputs.registry-user }}'
         REGISTRY_PASS: '${{ inputs.registry-pass }}'
