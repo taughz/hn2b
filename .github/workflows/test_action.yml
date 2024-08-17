@@ -53,6 +53,16 @@ jobs:
               echo "Built image did not match expected image: $BUILT_IMAGE" >&2
               exit 1
           fi
+          HAD_IMAGE=${{ steps.build-image.outputs.had-image }}
+          if [ "$HAD_IMAGE" != "false" ]; then
+              echo "Expected to NOT have an image!" >&2
+              exit 1
+          fi
+          HAD_REMOTE_IMAGE=${{ steps.build-image.outputs.had-remote-image }}
+          if [ "$HAD_REMOTE_IMAGE" != "false" ]; then
+              echo "Expected to NOT have a remote image!" >&2
+              exit 1
+          fi
           WAS_PULLED=${{ steps.build-image.outputs.was-pulled }}
           if [ "$WAS_PULLED" != "false" ]; then
               echo "Expected the image to NOT be pulled!" >&2
@@ -78,6 +88,16 @@ jobs:
           BUILT_IMAGE=${{ steps.not-build-image.outputs.image }}
           if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
               echo "Built image did not match expected image: $BUILT_IMAGE" >&2
+              exit 1
+          fi
+          HAD_IMAGE=${{ steps.not-build-image.outputs.had-image }}
+          if [ "$HAD_IMAGE" != "true" ]; then
+              echo "Expected to have an image!" >&2
+              exit 1
+          fi
+          HAD_REMOTE_IMAGE=${{ steps.not-build-image.outputs.had-remote-image }}
+          if [ "$HAD_REMOTE_IMAGE" != "false" ]; then
+              echo "Expected to NOT have a remote image!" >&2
               exit 1
           fi
           WAS_PULLED=${{ steps.not-build-image.outputs.was-pulled }}
@@ -109,6 +129,16 @@ jobs:
           BUILT_IMAGE=${{ steps.push-image.outputs.image }}
           if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
               echo "Built image did not match expected image: $BUILT_IMAGE" >&2
+              exit 1
+          fi
+          HAD_IMAGE=${{ steps.push-image.outputs.had-image }}
+          if [ "$HAD_IMAGE" != "true" ]; then
+              echo "Expected to have an image!" >&2
+              exit 1
+          fi
+          HAD_REMOTE_IMAGE=${{ steps.push-image.outputs.had-remote-image }}
+          if [ "$HAD_REMOTE_IMAGE" != "false" ]; then
+              echo "Expected to NOT have a remote image!" >&2
               exit 1
           fi
           WAS_PULLED=${{ steps.push-image.outputs.was-pulled }}
@@ -146,6 +176,16 @@ jobs:
           BUILT_IMAGE=${{ steps.pull-image.outputs.image }}
           if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
               echo "Built image did not match expected image: $BUILT_IMAGE" >&2
+              exit 1
+          fi
+          HAD_IMAGE=${{ steps.pull-image.outputs.had-image }}
+          if [ "$HAD_IMAGE" != "false" ]; then
+              echo "Expected to NOT have an image!" >&2
+              exit 1
+          fi
+          HAD_REMOTE_IMAGE=${{ steps.pull-image.outputs.had-remote-image }}
+          if [ "$HAD_REMOTE_IMAGE" != "true" ]; then
+              echo "Expected to have a remote image!" >&2
               exit 1
           fi
           WAS_PULLED=${{ steps.pull-image.outputs.was-pulled }}
@@ -186,9 +226,19 @@ jobs:
               echo "Built image did not match expected image: $BUILT_IMAGE" >&2
               exit 1
           fi
+          HAD_IMAGE=${{ steps.skip-pull-image.outputs.had-image }}
+          if [ "$HAD_IMAGE" != "false" ]; then
+              echo "Expected to NOT have an image!" >&2
+              exit 1
+          fi
+          HAD_REMOTE_IMAGE=${{ steps.skip-pull-image.outputs.had-remote-image }}
+          if [ "$HAD_REMOTE_IMAGE" != "true" ]; then
+              echo "Expected to have a remote image!" >&2
+              exit 1
+          fi
           WAS_PULLED=${{ steps.skip-pull-image.outputs.was-pulled }}
-          if [ "$WAS_PULLED" != "true" ]; then
-              echo "Expected the image to be pulled!" >&2
+          if [ "$WAS_PULLED" != "false" ]; then
+              echo "Expected the image to NOT be pulled!" >&2
               exit 1
           fi
           WAS_BUILT=${{ steps.skip-pull-image.outputs.was-built }}

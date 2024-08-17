@@ -152,6 +152,8 @@ Use GitHub mode to pass argument through environment variables:
   ::group::Build (or not build) the image
   Has: hn2b-test:hn2b-538561f04d0e981c78972410ec0f217c
   ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
   WAS_PULLED=false
   WAS_BUILT=false
 
@@ -170,11 +172,14 @@ The user can disable caching:
   sha256:[a-z0-9]{64} (re)
   Built: hn2b-test:hn2b-538561f04d0e981c78972410ec0f217c
   ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
   WAS_PULLED=false
   WAS_BUILT=true
   $ unset NO_CACHE
 
-The user can just get the image name:
+The user can just get the image name. Notice that the outputs are always false,
+because the script does not actually check for the image:
 
   $ export NAME_ONLY=yes
   $ ./hn2b.sh -q --github
@@ -183,6 +188,8 @@ The user can just get the image name:
   ::group::Generate the tag
   ::endgroup::
   GENERATED_IMAGE=hn2b-test:hn2b-538561f04d0e981c78972410ec0f217c
+  HAD_IMAGE=false
+  HAD_REMOTE_IMAGE=false
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset NAME_ONLY
@@ -201,6 +208,8 @@ The user can choose another Dockerfile:
   ::group::Build (or not build) the image
   Has: hn2b-test:hn2b-edfef6d2d81cdd42c46038af5836def0
   ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset DOCKERFILE
@@ -219,6 +228,8 @@ The user can choose a base image:
   ::group::Build (or not build) the image
   Has: hn2b-test:hn2b-87868d1fbb2b16d9eb62ed70361ac6df
   ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset BASE_IMAGE
@@ -242,6 +253,8 @@ The user can add build arguments:
   ::group::Build (or not build) the image
   Has: hn2b-test:hn2b-aa0ba9e3c5a3f69b7515e9cea8f3547d
   ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset BUILD_ARGS
@@ -265,6 +278,8 @@ The user can add secrets:
   ::group::Build (or not build) the image
   Has: hn2b-test:hn2b-538561f04d0e981c78972410ec0f217c
   ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset SECRETS

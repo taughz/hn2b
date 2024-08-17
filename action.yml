@@ -85,6 +85,15 @@ outputs:
     description: >-
       The generated image `repo:tag` name.
     value: '${{ steps.hn2b.outputs.GENERATED_IMAGE }}'
+  had-image:
+    description: >-
+      True if the image is loaded in Docker, and it was either already loaded,
+      pulled from the registry, or built; false otherwise.
+    value: '${{ steps.hn2b.outputs.HAD_IMAGE }}'
+  had-remote-image:
+    description: >-
+      True if the image is available on the registry, false otherwise.
+    value: '${{ steps.hn2b.outputs.HAD_REMOTE_IMAGE }}'
   was-pulled:
     description: >-
       True if the image was pulled, false otherwise.

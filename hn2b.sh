@@ -110,6 +110,17 @@ truthy_to_num() {
     esac
 }
 
+# Usage: num_to_bool
+#
+# Converts a number to a "true" or "false" sting.
+num_to_bool() {
+    if [ "${1:-0}" -ne 0 ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
 # Usage: md5sum_dir_contents DIR
 #
 # Get the combined MD5 sum of every file in a directory.
@@ -306,8 +317,10 @@ fi
 # Exit if we are only showing the name
 if [ $show_name -ne 0 ]; then
     if [ $github_mode -ne 0 ]; then
-        echo "WAS_PULLED=false"
-        echo "WAS_BUILT=false"
+        echo "HAD_IMAGE=$(num_to_bool 0)"
+        echo "HAD_REMOTE_IMAGE=$(num_to_bool 0)"
+        echo "WAS_PULLED=$(num_to_bool 0)"
+        echo "WAS_BUILT=$(num_to_bool 0)"
     else
         echo $generated_image
     fi
@@ -374,8 +387,10 @@ if [ $rebuild -eq 0 -a $has_image -ne 0 ]; then
     echo "Has: $generated_image" >&2
     endgroup
     if [ $github_mode -ne 0 ]; then
-        echo "WAS_PULLED=false"
-        echo "WAS_BUILT=false"
+        echo "HAD_IMAGE=$(num_to_bool $has_image)"
+        echo "HAD_REMOTE_IMAGE=$(num_to_bool $has_remote_image)"
+        echo "WAS_PULLED=$(num_to_bool 0)"
+        echo "WAS_BUILT=$(num_to_bool 0)"
     fi
     exit 0
 fi
@@ -395,8 +410,10 @@ if [ $rebuild -eq 0 -a $has_remote_image -ne 0 ]; then
     fi
     endgroup
     if [ $github_mode -ne 0 ]; then
-        echo "WAS_PULLED=true"
-        echo "WAS_BUILT=false"
+        echo "HAD_IMAGE=$(num_to_bool $has_image)"
+        echo "HAD_REMOTE_IMAGE=$(num_to_bool $has_remote_image)"
+        echo "WAS_PULLED=$(num_to_bool $((! skip_pull)))"
+        echo "WAS_BUILT=$(num_to_bool 0)"
     fi
     exit 0
 fi
@@ -448,8 +465,10 @@ fi
 endgroup
 
 if [ $github_mode -ne 0 ]; then
-    echo "WAS_PULLED=false"
-    echo "WAS_BUILT=true"
+    echo "HAD_IMAGE=$(num_to_bool $has_image)"
+    echo "HAD_REMOTE_IMAGE=$(num_to_bool $has_remote_image)"
+    echo "WAS_PULLED=$(num_to_bool 0)"
+    echo "WAS_BUILT=$(num_to_bool 1)"
 fi
 
 exit 0
