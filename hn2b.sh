@@ -121,14 +121,30 @@ num_to_bool() {
     fi
 }
 
+# Usage: stat_name_xf
+#
+# For the given file, output the name and either an "x" if the file is
+# exectable, or "f" if it is not.
+stat_name_xf() {
+    echo "$1:$(stat -c '%A' "$1" | cut -c 4 | tr '-' 'f')"
+}
+
 # Usage: md5sum_dir_contents DIR
 #
 # Get the combined MD5 sum of every file in a directory.
 md5sum_dir_contents() {
-    local target_dir target_files
-    target_dir=$1
-    readarray -t target_files < <(find "$target_dir" -type f | LC_ALL=C sort)
-    cat "${target_files[@]}" | md5sum - | cut -d ' ' -f 1
+    local target_dir=$1
+    local target_files stat_file
+    readarray -t target_files < <(cd "$target_dir" && find . -type f | LC_ALL=C sort)
+    # Enumerate file names and permissions (like exectable bit)
+    stat_file=$(mktemp)
+    local target_file
+    for target_file in "${target_files[@]}"; do
+        (cd "$target_dir" && stat_name_xf "$target_file") >> $stat_file
+    done
+    # Hash everything, including the generated file
+    target_files+=($stat_file)
+    (cd "$target_dir" && cat "${target_files[@]}") | md5sum - | cut -d ' ' -f 1
 }
 
 # Default options
