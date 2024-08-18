@@ -77,65 +77,65 @@ Using the '--help' option should also show usage:
 Use the '--name' option to display the image name and exit.
 
   $ ./hn2b.sh --name hn2b-test test/image
-  hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 Just in case the image has been left around, force it's removal now:
 
-  $ docker rmi -f hn2b-test:hn2b-51f11c9b48abb528385580282683aa27 > /dev/null 2>&1
+  $ docker rmi -f hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2 > /dev/null 2>&1
 
 Build the base image. Then try building it again. The second time, it should not
 actually build, but reuse the container that was just built:
 
   $ ./hn2b.sh -q hn2b-test test/image
   sha256:[a-z0-9]{64} (re)
-  Built: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Built: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
   $ ./hn2b.sh -q hn2b-test test/image
-  Has: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 Even if the container is already built, using the '--no-cache' option should
 force it to rebuild:
 
   $ ./hn2b.sh -q --no-cache hn2b-test test/image
   sha256:[a-z0-9]{64} (re)
-  Built: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Built: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 It should also be possible to use the current directory as the context:
 
   $ (cd test/image; ../../hn2b.sh --name hn2b-test)
-  hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
   $ (cd test/image; ../../hn2b.sh -q hn2b-test)
-  Has: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 The user can choose to build against a different Dockerfile in the context, and
 doing so should cause the tag to change:
 
-  $ docker rmi -f hn2b-test:hn2b-d17a4cc219b0383a0cafb8543cc1dca2 > /dev/null 2>&1
+  $ docker rmi -f hn2b-test:hn2b-a179e57179133ca2f825c0c0ddb3f4c3 > /dev/null 2>&1
   $ ./hn2b.sh -q --file Dockerfile.alt hn2b-test test/image
   sha256:[a-z0-9]{64} (re)
-  Built: hn2b-test:hn2b-d17a4cc219b0383a0cafb8543cc1dca2
+  Built: hn2b-test:hn2b-a179e57179133ca2f825c0c0ddb3f4c3
 
 Adding a base image should cause the tag to change:
 
-  $ docker rmi -f hn2b-test:hn2b-85787dc2aafcca4469e489bdc2664dbb > /dev/null 2>&1
+  $ docker rmi -f hn2b-test:hn2b-4c0d83dc221a7e4de40879ef6919f4a9 > /dev/null 2>&1
   $ ./hn2b.sh -q --base ubuntu:22.04 hn2b-test test/image
   sha256:[a-z0-9]{64} (re)
-  Built: hn2b-test:hn2b-85787dc2aafcca4469e489bdc2664dbb
+  Built: hn2b-test:hn2b-4c0d83dc221a7e4de40879ef6919f4a9
 
 Adding build args should cause the tag to change:
 
-  $ docker rmi -f hn2b-test:hn2b-d0e85998bf00ef2df01caca69b683778 > /dev/null 2>&1
+  $ docker rmi -f hn2b-test:hn2b-0d4614681cf323ae8156a1d6e5232661 > /dev/null 2>&1
   $ ./hn2b.sh -q --arg "FOO=2" --arg "BAR=3" hn2b-test test/image
   sha256:[a-z0-9]{64} (re)
-  Built: hn2b-test:hn2b-d0e85998bf00ef2df01caca69b683778
+  Built: hn2b-test:hn2b-0d4614681cf323ae8156a1d6e5232661
 
 Adding secrets should NOT cause the tag to change:
 
   $ export SECRET1="MyPassword"
   $ export SECRET2="Hunter2"
   $ ./hn2b.sh -q --secret "id=SECRET1" --secret "id=SECRET2" hn2b-test test/image
-  Has: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 Use GitHub mode to pass argument through environment variables:
 
@@ -146,11 +146,11 @@ Use GitHub mode to pass argument through environment variables:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   ::group::Check if the image exists
   ::endgroup::
   ::group::Build (or not build) the image
-  Has: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   ::endgroup::
   HAD_IMAGE=true
   HAD_REMOTE_IMAGE=(true|false) (re)
@@ -165,12 +165,12 @@ The user can disable caching:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   ::group::Check if the image exists
   ::endgroup::
   ::group::Build (or not build) the image
   sha256:[a-z0-9]{64} (re)
-  Built: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Built: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   ::endgroup::
   HAD_IMAGE=true
   HAD_REMOTE_IMAGE=(true|false) (re)
@@ -187,7 +187,7 @@ because the script does not actually check for the image:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   HAD_IMAGE=false
   HAD_REMOTE_IMAGE=false
   WAS_PULLED=false
@@ -202,11 +202,11 @@ The user can choose another Dockerfile:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-d17a4cc219b0383a0cafb8543cc1dca2
+  GENERATED_IMAGE=hn2b-test:hn2b-a179e57179133ca2f825c0c0ddb3f4c3
   ::group::Check if the image exists
   ::endgroup::
   ::group::Build (or not build) the image
-  Has: hn2b-test:hn2b-d17a4cc219b0383a0cafb8543cc1dca2
+  Has: hn2b-test:hn2b-a179e57179133ca2f825c0c0ddb3f4c3
   ::endgroup::
   HAD_IMAGE=true
   HAD_REMOTE_IMAGE=(true|false) (re)
@@ -222,11 +222,11 @@ The user can choose a base image:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-85787dc2aafcca4469e489bdc2664dbb
+  GENERATED_IMAGE=hn2b-test:hn2b-4c0d83dc221a7e4de40879ef6919f4a9
   ::group::Check if the image exists
   ::endgroup::
   ::group::Build (or not build) the image
-  Has: hn2b-test:hn2b-85787dc2aafcca4469e489bdc2664dbb
+  Has: hn2b-test:hn2b-4c0d83dc221a7e4de40879ef6919f4a9
   ::endgroup::
   HAD_IMAGE=true
   HAD_REMOTE_IMAGE=false
@@ -247,11 +247,11 @@ The user can add build arguments:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-d0e85998bf00ef2df01caca69b683778
+  GENERATED_IMAGE=hn2b-test:hn2b-0d4614681cf323ae8156a1d6e5232661
   ::group::Check if the image exists
   ::endgroup::
   ::group::Build (or not build) the image
-  Has: hn2b-test:hn2b-d0e85998bf00ef2df01caca69b683778
+  Has: hn2b-test:hn2b-0d4614681cf323ae8156a1d6e5232661
   ::endgroup::
   HAD_IMAGE=true
   HAD_REMOTE_IMAGE=(true|false) (re)
@@ -272,11 +272,11 @@ The user can add secrets:
   ::endgroup::
   ::group::Generate the tag
   ::endgroup::
-  GENERATED_IMAGE=hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   ::group::Check if the image exists
   ::endgroup::
   ::group::Build (or not build) the image
-  Has: hn2b-test:hn2b-51f11c9b48abb528385580282683aa27
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
   ::endgroup::
   HAD_IMAGE=true
   HAD_REMOTE_IMAGE=(true|false) (re)

@@ -17,3 +17,5 @@ COPY test.txt /test.txt
 COPY .hidden.txt /.hidden.txt
 COPY subdir /subdir
 COPY .subdir /.subdir
+COPY side_file.txt /side_file.txt
+COPY side_dir /side_dir
