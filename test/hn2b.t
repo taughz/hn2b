@@ -18,7 +18,7 @@ Usage should print if no arguments are given:
               [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-o | --skip-pull]
               [-p | --push] [-u | --user USER] [-r | --pass PASS]
               [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
-              [-x | --github ] [-h | --help]
+              [-x | --github ] [-z | --script] [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -37,6 +37,7 @@ Usage should print if no arguments are given:
       -l | --log              Display plain progress during build
       -q | --quiet            Display only essential information
       -x | --github           Operate in GitHub mode
+      -z | --script           Operate in script mode
       -h | --help             Display this help message
   [1]
 
@@ -51,7 +52,7 @@ Using the '--help' option should also show usage:
               [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-o | --skip-pull]
               [-p | --push] [-u | --user USER] [-r | --pass PASS]
               [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
-              [-x | --github ] [-h | --help]
+              [-x | --github ] [-z | --script] [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -70,6 +71,7 @@ Using the '--help' option should also show usage:
       -l | --log              Display plain progress during build
       -q | --quiet            Display only essential information
       -x | --github           Operate in GitHub mode
+      -z | --script           Operate in script mode
       -h | --help             Display this help message
 
 

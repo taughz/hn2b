@@ -18,7 +18,7 @@ Usage: $(basename "$0") [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
             [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-o | --skip-pull]
             [-p | --push] [-u | --user USER] [-r | --pass PASS]
             [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
-            [-x | --github ] [-h | --help]
+            [-x | --github ] [-z | --script] [-h | --help]
             TARGET_IMAGE [CONTEXT_DIR]
 
 Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -37,6 +37,7 @@ Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
     -l | --log              Display plain progress during build
     -q | --quiet            Display only essential information
     -x | --github           Operate in GitHub mode
+    -z | --script           Operate in script mode
     -h | --help             Display this help message
 EOF
 }
@@ -163,6 +164,7 @@ show_name=0
 show_log=0
 quiet_mode=0
 github_mode=0
+script_mode=0
 
 # Convert long options to short options, preserving order
 for arg in "${@}"; do
@@ -180,6 +182,7 @@ for arg in "${@}"; do
         "--log") set -- "${@}" "-l";;
         "--quiet") set -- "${@}" "-q";;
         "--github") set -- "${@}" "-x";;
+        "--script") set -- "${@}" "-z";;
         "--help") set -- "${@}" "-h";;
         *) set -- "${@}" "${arg}";;
     esac
@@ -187,7 +190,7 @@ for arg in "${@}"; do
 done
 
 # Parse short options using getopts
-while getopts "f:b:a:s:opu:r:knlqxh" arg &> /dev/null; do
+while getopts "f:b:a:s:opu:r:knlqxzh" arg &> /dev/null; do
     case "${arg}" in
         "f") dockerfile=$OPTARG;;
         "b") base_image=$OPTARG;;
@@ -202,6 +205,7 @@ while getopts "f:b:a:s:opu:r:knlqxh" arg &> /dev/null; do
         "l") show_log=1;;
         "q") quiet_mode=1;;
         "x") github_mode=1;;
+        "z") script_mode=1;;
         "h") show_usage; exit 0;;
         "?") show_usage; exit 1;;
     esac
@@ -250,6 +254,11 @@ fi
 
 remove_empty build_args
 remove_empty secrets
+
+# Turn script mode on for GitHub
+if [ $github_mode -ne 0 ]; then
+    script_mode=1
+fi
 
 # Check for Docker (unless we just need the name)
 if ! command -v docker &> /dev/null && [ $show_name -eq 0 ]; then
@@ -325,14 +334,14 @@ generated_image="$target_repo:$generated_tag"
 
 endgroup
 
-# Always output the image in GitHub mode
-if [ $github_mode -ne 0 ]; then
+# Always output the image in script mode
+if [ $script_mode -ne 0 ]; then
     echo "GENERATED_IMAGE=$generated_image"
 fi
 
 # Exit if we are only showing the name
 if [ $show_name -ne 0 ]; then
-    if [ $github_mode -ne 0 ]; then
+    if [ $script_mode -ne 0 ]; then
         echo "HAD_IMAGE=$(num_to_bool 0)"
         echo "HAD_REMOTE_IMAGE=$(num_to_bool 0)"
         echo "WAS_PULLED=$(num_to_bool 0)"
@@ -402,7 +411,7 @@ fi
 if [ $rebuild -eq 0 -a $has_image -ne 0 ]; then
     echo "Has: $generated_image" >&2
     endgroup
-    if [ $github_mode -ne 0 ]; then
+    if [ $script_mode -ne 0 ]; then
         echo "HAD_IMAGE=$(num_to_bool $has_image)"
         echo "HAD_REMOTE_IMAGE=$(num_to_bool $has_remote_image)"
         echo "WAS_PULLED=$(num_to_bool 0)"
@@ -425,7 +434,7 @@ if [ $rebuild -eq 0 -a $has_remote_image -ne 0 ]; then
         echo "Remote: $generated_image" >&2
     fi
     endgroup
-    if [ $github_mode -ne 0 ]; then
+    if [ $script_mode -ne 0 ]; then
         echo "HAD_IMAGE=$(num_to_bool $has_image)"
         echo "HAD_REMOTE_IMAGE=$(num_to_bool $has_remote_image)"
         echo "WAS_PULLED=$(num_to_bool $((! skip_pull)))"
@@ -480,7 +489,7 @@ fi
 
 endgroup
 
-if [ $github_mode -ne 0 ]; then
+if [ $script_mode -ne 0 ]; then
     echo "HAD_IMAGE=$(num_to_bool $has_image)"
     echo "HAD_REMOTE_IMAGE=$(num_to_bool $has_remote_image)"
     echo "WAS_PULLED=$(num_to_bool 0)"
