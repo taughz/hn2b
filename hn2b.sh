@@ -32,8 +32,8 @@ REGCTL_URL="https://github.com/regclient/regclient/releases/latest/download/regc
 show_usage() {
     cat <<EOF >&2
 Usage: $(basename "$0") [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-            [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-o | --skip-pull]
-            [-p | --push] [-u | --user USER] [-r | --pass PASS]
+            [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-j | --only-pull]
+            [-o | --skip-pull] [-p | --push] [-u | --user USER] [-r | --pass PASS]
             [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
             [-x | --github ] [-z | --script] [-h | --help]
             TARGET_IMAGE [CONTEXT_DIR]
@@ -45,6 +45,7 @@ Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
     -b | --base BASE_IMAGE  Base image to use for the build
     -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
     -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
+    -j | --only-pull        Only pull the image, don't build
     -o | --skip-pull        Just exit instead of pulling remote images
     -p | --push             Push the newly built container
     -u | --user USER        User to use during registry login
@@ -172,6 +173,7 @@ dockerfile="Dockerfile"
 base_image=""
 build_args=()
 secrets=()
+only_pull=0
 skip_pull=0
 do_push=0
 registry_user=${REGISTRY_USER:-}
@@ -190,6 +192,7 @@ for arg in "${@}"; do
         "--base") set -- "${@}" "-b";;
         "--arg") set -- "${@}" "-a";;
         "--secret") set -- "${@}" "-s";;
+        "--only-pull") set -- "${@}" "-j";;
         "--skip-pull") set -- "${@}" "-o";;
         "--push") set -- "${@}" "-p";;
         "--user") set -- "${@}" "-u";;
@@ -207,12 +210,13 @@ for arg in "${@}"; do
 done
 
 # Parse short options using getopts
-while getopts "f:b:a:s:opu:r:knlqxzh" arg &> /dev/null; do
+while getopts "f:b:a:s:jopu:r:knlqxzh" arg &> /dev/null; do
     case "${arg}" in
         "f") dockerfile=$OPTARG;;
         "b") base_image=$OPTARG;;
         "a") build_args+=("$OPTARG");;
         "s") secrets+=("$OPTARG");;
+        "j") only_pull=1;;
         "o") skip_pull=1;;
         "p") do_push=1;;
         "u") registry_user=$OPTARG;;
@@ -261,6 +265,7 @@ else
     if [ -n "${SECRETS:-}" ]; then
         readarray -t secrets <<< "$SECRETS"
     fi
+    only_pull=$(truthy_to_num "${ONLY_PULL:-}")
     skip_pull=$(truthy_to_num "${SKIP_PULL:-}")
     do_push=$(truthy_to_num "${DO_PUSH:-}")
     [ -n "${REGISTRY_USER:-}" ] && registry_user=$REGISTRY_USER
@@ -419,7 +424,7 @@ group "Build (or not build) the image"
 
 # Always rebuild if not caching, unless skipping pull
 rebuild=$no_cache
-if [ $skip_pull -ne 0 ]; then
+if [ $only_pull -ne 0 -o $skip_pull -ne 0 ]; then
     rebuild=0
 fi
 
@@ -442,12 +447,16 @@ if [ $quiet_mode -ne 0 ]; then
 fi
 
 # Pull the image if available
-if [ $rebuild -eq 0 -a $has_remote_image -ne 0 ]; then
-    if [ $skip_pull -eq 0 ]; then
-        docker pull $arg_quiet $generated_image  >&2
-        echo "Has: $generated_image" >&2
+if [ $rebuild -eq 0 -a $has_remote_image -ne 0 -o $only_pull -ne 0 ]; then
+    if [ $has_remote_image -ne 0 ]; then
+        if [ $skip_pull -eq 0 ]; then
+            docker pull $arg_quiet $generated_image  >&2
+            echo "Has: $generated_image" >&2
+        else
+            echo "Remote: $generated_image" >&2
+        fi
     else
-        echo "Remote: $generated_image" >&2
+        echo "Missing: $generated_image" >&2
     fi
     endgroup
     if [ $script_mode -ne 0 ]; then

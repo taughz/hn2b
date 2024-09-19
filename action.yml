@@ -47,6 +47,11 @@ inputs:
       tag generation.
     required: false
     default: ''
+  only-pull:
+    description: >-
+      Only attempt to pull the image. Do not build the image.
+    required: false
+    default: false
   skip-pull:
     description: >-
       Check if the image is available on the registry as usual, but if it is
@@ -117,6 +122,7 @@ runs:
         BASE_IMAGE: '${{ inputs.base-image }}'
         BUILD_ARGS: '${{ inputs.build-args }}'
         SECRETS: '${{ inputs.secrets }}'
+        ONLY_PULL: '${{ inputs.only-pull }}'
         SKIP_PULL: '${{ inputs.skip-pull }}'
         DO_PUSH: '${{ inputs.push }}'
         REGISTRY_USER: '${{ inputs.registry-user }}'
