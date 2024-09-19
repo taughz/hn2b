@@ -385,10 +385,9 @@ if [ $has_registry -ne 0 ]; then
     if [ -n "$registry_user" -a -n "$registry_pass" ]; then
         regctl registry login $registry --user $registry_user --pass $registry_pass >&2
         docker login --username $registry_user --password $registry_pass $registry >&2
-    else
-        warn_echo "Skipping registry login due to missing credentials"
     fi
-    if regctl tag ls $target_repo | grep -q $generated_tag; then
+    repo_tags=$(regctl tag ls $target_repo)
+    if echo "$repo_tags" | grep -q $generated_tag; then
         has_remote_image=1
     fi
 fi
