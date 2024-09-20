@@ -24,7 +24,8 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-REGCTL_URL="https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64"
+ARCH=$(dpkg --print-architecture)
+REGCTL_URL="https://github.com/regclient/regclient/releases/latest/download/regctl-linux-$ARCH"
 
 # Usage: show_usage
 #
@@ -290,21 +291,16 @@ fi
 
 # Check for Regctl (unless we just need the name)
 if ! command -v regctl &> /dev/null && [ $show_name -eq 0 ]; then
-    if [ $(dpkg --print-architecture) = "amd64" ]; then
-        if ! command -v curl &> /dev/null; then
-            err_echo "The command 'curl' must be in PATH!"
-            exit 1
-        fi
-        REGCTL_BIN=$HOME/.local/bin/regctl
-        mkdir -p $(dirname $REGCTL_BIN)
-        curl -fsSL "$REGCTL_URL" > $REGCTL_BIN
-        chmod +x $REGCTL_BIN
-        if ! echo $PATH | grep -q $(dirname $REGCTL_BIN); then
-            PATH="$(dirname $REGCTL_BIN):$PATH"
-        fi
-    else
-        err_echo "The command 'regctl' must be in PATH!"
+    if ! command -v curl &> /dev/null; then
+        err_echo "The command 'curl' must be in PATH!"
         exit 1
+    fi
+    REGCTL_BIN=$HOME/.local/bin/regctl
+    mkdir -p $(dirname $REGCTL_BIN)
+    curl -fsSL "$REGCTL_URL" > $REGCTL_BIN
+    chmod +x $REGCTL_BIN
+    if ! echo $PATH | grep -q $(dirname $REGCTL_BIN); then
+        PATH="$(dirname $REGCTL_BIN):$PATH"
     fi
 fi
 
