@@ -474,6 +474,10 @@ for ba in "${build_args[@]}"; do
     args_build_args+=("--build-arg" "$ba")
 done
 
+# Add this special build argument which does not participate in the context,
+# because it is the tag computed from the context
+args_hn2b_tag=("--build-arg" "HN2B_TAG=$generated_tag")
+
 args_secrets=()
 for sc in "${secrets[@]}"; do
     args_secrets+=("--secret" "$sc")
@@ -489,8 +493,8 @@ if [ $show_log -ne 0 ]; then
 fi
 
 docker build --load $arg_quiet "${args_base_image[@]}" "${args_build_args[@]}" \
-    "${args_secrets[@]}" "${args_misc[@]}" --tag $generated_image \
-    --file $dockerfile - < $context_tarball >&2
+    "${args_hn2b_tag[@]}" "${args_secrets[@]}" "${args_misc[@]}" \
+    --tag $generated_image --file $dockerfile - < $context_tarball >&2
 echo "Built: $generated_image" >&2
 
 if [ $do_push -ne 0 ]; then
