@@ -103,6 +103,78 @@ warn_echo() {
     echo "$@" >&2
 }
 
+# Usage: match_opt_v SHORT_OPT LONG_OPT CUR_ARG NXT_ARG VALUE_REF EXTRA_SHIFT_REF
+#
+# Match an option argument. Options always require a value, which can be
+# supplied as the next argument, or appended to the long option with an equals
+# sign. SHORT_OPT should take the form '-o' or else be blank. LONG_OPT should
+# take the form '--long-option' or else be blank. CUR_ARG is the current
+# argument, and must not be blank. NXT_ARG is the next argument, and can be
+# blank if there is none. VALUE_REF will be set to the options value on a match.
+# EXTRA_SHIFT_REF is used to indicate that an extra argument was consumed for
+# the value, and an extra shift should be performed.
+match_opt_v() {
+    local short_opt=${1:-@@@@@@@@@@@@@@@@}
+    local long_opt=${2:-@@@@@@@@@@@@@@@@}
+    local cur_arg=$3
+    local nxt_arg=$4
+    local value_name=$5
+    local -n _value_or_array=${value_name%+}
+    local -n _extra_shift=$6
+    local tmp_value=""
+    _extra_shift=0
+    case $cur_arg in
+        "$short_opt" | "$long_opt" | "$long_opt="*)
+            tmp_value=${cur_arg#"$short_opt"}
+            tmp_value=${tmp_value#"$long_opt"}
+            tmp_value=${tmp_value#=}
+            if [ -z "$tmp_value" ]; then
+                if [ -z "$nxt_arg" -o "$nxt_arg" = "--" ]; then
+                    err_echo "Missing value for option: $cur_arg"
+                    exit 1
+                fi
+                tmp_value=$nxt_arg
+                _extra_shift=1
+            fi
+            if [ "${value_name: -1:1}" = "+" ]; then
+                _value_or_array+=("$tmp_value")
+            else
+                # shellcheck disable=SC2178
+                _value_or_array=$tmp_value
+            fi
+            return 0;;
+    esac
+    return 1
+}
+
+# Usage: match_opt_b SHORT_OPT LONG_OPT CUR_ARG VALUE_REF REPLACE_ARG_REF
+#
+# Match an boolean option argument. SHORT_OPT should take the form '-o' or else
+# be blank. LONG_OPT should take the form '--long-option' or else be blank.
+# CUR_ARG is the current argument, and must not be blank. VALUE_REF will be set
+# to '1' on a match. REPLACE_ARG_REF is used to indicate that multiple short
+# boolean options have been chained together, e.g., '-abc' and the current
+# argument should be replaced via set.
+match_opt_b() {
+    local short_opt=${1:-@@@@@@@@@@@@@@@@}
+    local long_opt=${2:-@@@@@@@@@@@@@@@@}
+    local cur_arg=$3
+    local prefix=${cur_arg:0:1}
+    local -n _value=$4
+    local -n _replace_arg=$5
+    _replace_arg=""
+    case $cur_arg in
+        "$short_opt" | "$long_opt")
+            _value=1
+            return 0;;
+        "$short_opt"*)
+            _value=1
+            _replace_arg=$prefix${cur_arg#"$short_opt"}
+            return 0;;
+    esac
+    return 1
+}
+
 # Usage: remove_empty ARRAYREF
 #
 # Remove empty elements from the given array.
@@ -111,7 +183,7 @@ remove_empty() {
     local array=()
     local element
     for element in "${arrayref[@]}"; do
-        if echo "$element" | grep -q '^[[:space:]]*$'; then
+        if echo "$element" | grep -q "^[[:space:]]*\$"; then
             continue
         fi
         array+=("$element")
@@ -146,7 +218,7 @@ num_to_bool() {
 # For the given file, output the name and either an "x" if the file is
 # exectable, or "f" if it is not.
 stat_name_xf() {
-    echo "$1:$(stat -c '%A' "$1" | cut -c 4 | tr '-' 'f')"
+    echo "$1:$(stat -c "%A" "$1" | cut -c 4 | tr "-" "f")"
 }
 
 # Usage: md5sum_dir_contents DIR
@@ -164,7 +236,7 @@ md5sum_dir_contents() {
     done
     # Hash everything, including the generated file
     target_files+=($stat_file)
-    (cd "$target_dir" && cat "${target_files[@]}") | md5sum - | cut -d ' ' -f 1
+    (cd "$target_dir" && cat "${target_files[@]}") | md5sum - | cut -d " " -f 1
 }
 
 # Default options
@@ -186,55 +258,42 @@ quiet_mode=0
 github_mode=0
 script_mode=0
 
-# Convert long options to short options, preserving order
-for arg in "${@}"; do
-    case "${arg}" in
-        "--file") set -- "${@}" "-f";;
-        "--base") set -- "${@}" "-b";;
-        "--arg") set -- "${@}" "-a";;
-        "--secret") set -- "${@}" "-s";;
-        "--only-pull") set -- "${@}" "-j";;
-        "--skip-pull") set -- "${@}" "-o";;
-        "--push") set -- "${@}" "-p";;
-        "--user") set -- "${@}" "-u";;
-        "--pass") set -- "${@}" "-r";;
-        "--no-cache") set -- "${@}" "-k";;
-        "--name") set -- "${@}" "-n";;
-        "--log") set -- "${@}" "-l";;
-        "--quiet") set -- "${@}" "-q";;
-        "--github") set -- "${@}" "-x";;
-        "--script") set -- "${@}" "-z";;
-        "--help") set -- "${@}" "-h";;
-        *) set -- "${@}" "${arg}";;
-    esac
-    shift
+# Process all arguments
+while [ $# -gt 0 ]; do
+    replace_arg=""
+    extra_shift=0
+    if [ "$1" = "--" ]; then
+        shift
+        break
+    elif [ "${1:0:1}" != "-" ]; then
+        # Positional argument
+        break
+    elif match_opt_v -f --file "$1" "${2:-}" dockerfile extra_shift; then :
+    elif match_opt_v -b --base "$1" "${2:-}" base_image extra_shift; then :
+    elif match_opt_v -a --arg "$1" "${2:-}" build_args+ extra_shift; then :
+    elif match_opt_v -s --secret "$1" "${2:-}" secrets+ extra_shift; then :
+    elif match_opt_b -j --only-pull "$1" only_pull replace_arg; then :
+    elif match_opt_b -o --skip-pull "$1" skip_pull replace_arg; then :
+    elif match_opt_b -p --push "$1" do_push replace_arg; then :
+    elif match_opt_v -u --user "$1" "${2:-}" registry_user extra_shift; then :
+    elif match_opt_v -r --pass "$1" "${2:-}" registry_pass extra_shift; then :
+    elif match_opt_b -k --no-cache "$1" no_cache replace_arg; then :
+    elif match_opt_b -n --name "$1" show_name replace_arg; then :
+    elif match_opt_b -l --log "$1" show_log replace_arg; then :
+    elif match_opt_b -q --quiet "$1" quiet_mode replace_arg; then :
+    elif match_opt_b -x --github "$1" github_mode replace_arg; then :
+    elif match_opt_b -z --script "$1" script_mode replace_arg; then :
+    elif match_opt_b -h --help "$1" _ replace_arg; then
+        show_usage
+        exit 0
+    else
+        # Bad argument
+        show_usage
+        exit 1
+    fi
+    [ -n "$replace_arg" ] && shift && set -- "" "$replace_arg" "$@"
+    shift && [ $extra_shift -ne 0 ] && shift
 done
-
-# Parse short options using getopts
-while getopts "f:b:a:s:jopu:r:knlqxzh" arg &> /dev/null; do
-    case "${arg}" in
-        "f") dockerfile=$OPTARG;;
-        "b") base_image=$OPTARG;;
-        "a") build_args+=("$OPTARG");;
-        "s") secrets+=("$OPTARG");;
-        "j") only_pull=1;;
-        "o") skip_pull=1;;
-        "p") do_push=1;;
-        "u") registry_user=$OPTARG;;
-        "r") registry_pass=$OPTARG;;
-        "k") no_cache=1;;
-        "n") show_name=1;;
-        "l") show_log=1;;
-        "q") quiet_mode=1;;
-        "x") github_mode=1;;
-        "z") script_mode=1;;
-        "h") show_usage; exit 0;;
-        "?") show_usage; exit 1;;
-    esac
-done
-
-# Shift positional arguments into place
-shift $((OPTIND - 1))
 
 if [ $github_mode -eq 0 ]; then
     # There are one or two positional arguments
@@ -347,7 +406,7 @@ group "Generate the tag"
 tmp_context_dir=$(mktemp -d)
 (cd $tmp_context_dir && tar --extract -f $context_tarball)
 generated_tag="hn2b-$(md5sum_dir_contents $tmp_context_dir)"
-target_repo=$(echo $target_image | cut -d ':' -f 1)
+target_repo=$(echo $target_image | cut -d ":" -f 1)
 generated_image="$target_repo:$generated_tag"
 
 endgroup
@@ -378,11 +437,11 @@ group "Check if the image exists"
 
 # Assume the registry is the first element of the namespace
 has_registry=1
-registry=$(echo $target_image | cut -s -d '/' -f 1)
+registry=$(echo $target_image | cut -s -d "/" -f 1)
 
 # Make sure this is actually a registry and not just part of the namespace by
 # checking for a '.' character, such as in 'ghcr.io', etc
-if ! echo $registry | grep -q '[.]'; then
+if ! echo $registry | grep -q "[.]"; then
     has_registry=0
     registry=""
 fi
@@ -394,7 +453,7 @@ if [ $has_registry -eq 0 -a $do_push -ne 0 ]; then
 fi
 
 has_image=0
-if docker image ls -q $generated_image | grep -q '.'; then
+if docker image ls -q $generated_image | grep -q "."; then
     has_image=1
 fi
 
@@ -503,7 +562,7 @@ if [ $do_push -ne 0 ]; then
 fi
 
 # Tag the image if there was a tag supplied
-if echo $target_image | grep -q ':'; then
+if echo $target_image | grep -q ":"; then
     docker tag $generated_image $target_image >&2
     echo "Tagged: $target_image" >&2
     if [ $do_push -ne 0 ]; then
