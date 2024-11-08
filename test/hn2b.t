@@ -15,31 +15,35 @@ Usage should print if no arguments are given:
 
   $ ./hn2b.sh
   Usage: hn2b.sh [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-              [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-j | --only-pull]
-              [-o | --skip-pull] [-p | --push] [-u | --user USER] [-r | --pass PASS]
-              [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
-              [-x | --github ] [-z | --script] [-h | --help]
+              [-a | --arg BUILD_ARG] [-s | --secret SECRET]
+              [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
+              [-j | --only-pull] [-o | --skip-pull] [-p | --push]
+              [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
+              [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
+              [-z | --script] [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
   '[REG/][NS/**/]REPO[:TAG]', using CONTEXT_DIR as the context.
   
-      -f | --file DOCKERFILE  Dockerfile to use for the build
-      -b | --base BASE_IMAGE  Base image to use for the build
-      -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
-      -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
-      -j | --only-pull        Only pull the image, don't build
-      -o | --skip-pull        Just exit instead of pulling remote images
-      -p | --push             Push the newly built container
-      -u | --user USER        User to use during registry login
-      -r | --pass PASS        Password or token to use during registry login
-      -k | --no-cache         Build without using cache
-      -n | --name             Display the name of the image only
-      -l | --log              Display plain progress during build
-      -q | --quiet            Display only essential information
-      -x | --github           Operate in GitHub mode
-      -z | --script           Operate in script mode
-      -h | --help             Display this help message
+      -f | --file DOCKERFILE      Dockerfile to use for the build
+      -b | --base BASE_IMAGE      Base image to use for the build
+      -a | --arg BUILD_ARG        A build argument, e.g., 'NAME=VALUE'
+      -s | --secret SECRET        A secret argument, e.g., 'NAME=VALUE'
+      --sub-arg BUILD_ARG         Sub build args not affecting tag generation
+      --sub-context CONTEXT_DIR   Sub context not affecting tag generation
+      -j | --only-pull            Only pull the image, don't build
+      -o | --skip-pull            Just exit instead of pulling remote images
+      -p | --push                 Push the newly built container
+      -u | --user USER            User to use during registry login
+      -r | --pass PASS            Password or token to use during registry login
+      -k | --no-cache             Build without using cache
+      -n | --name                 Display the name of the image only
+      -l | --log                  Display plain progress during build
+      -q | --quiet                Display only essential information
+      -x | --github               Operate in GitHub mode
+      -z | --script               Operate in script mode
+      -h | --help                 Display this help message
   [1]
 
 
@@ -50,31 +54,35 @@ Using the '--help' option should also show usage:
 
   $ ./hn2b.sh --help
   Usage: hn2b.sh [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-              [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-j | --only-pull]
-              [-o | --skip-pull] [-p | --push] [-u | --user USER] [-r | --pass PASS]
-              [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
-              [-x | --github ] [-z | --script] [-h | --help]
+              [-a | --arg BUILD_ARG] [-s | --secret SECRET]
+              [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
+              [-j | --only-pull] [-o | --skip-pull] [-p | --push]
+              [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
+              [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
+              [-z | --script] [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
   '[REG/][NS/**/]REPO[:TAG]', using CONTEXT_DIR as the context.
   
-      -f | --file DOCKERFILE  Dockerfile to use for the build
-      -b | --base BASE_IMAGE  Base image to use for the build
-      -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
-      -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
-      -j | --only-pull        Only pull the image, don't build
-      -o | --skip-pull        Just exit instead of pulling remote images
-      -p | --push             Push the newly built container
-      -u | --user USER        User to use during registry login
-      -r | --pass PASS        Password or token to use during registry login
-      -k | --no-cache         Build without using cache
-      -n | --name             Display the name of the image only
-      -l | --log              Display plain progress during build
-      -q | --quiet            Display only essential information
-      -x | --github           Operate in GitHub mode
-      -z | --script           Operate in script mode
-      -h | --help             Display this help message
+      -f | --file DOCKERFILE      Dockerfile to use for the build
+      -b | --base BASE_IMAGE      Base image to use for the build
+      -a | --arg BUILD_ARG        A build argument, e.g., 'NAME=VALUE'
+      -s | --secret SECRET        A secret argument, e.g., 'NAME=VALUE'
+      --sub-arg BUILD_ARG         Sub build args not affecting tag generation
+      --sub-context CONTEXT_DIR   Sub context not affecting tag generation
+      -j | --only-pull            Only pull the image, don't build
+      -o | --skip-pull            Just exit instead of pulling remote images
+      -p | --push                 Push the newly built container
+      -u | --user USER            User to use during registry login
+      -r | --pass PASS            Password or token to use during registry login
+      -k | --no-cache             Build without using cache
+      -n | --name                 Display the name of the image only
+      -l | --log                  Display plain progress during build
+      -q | --quiet                Display only essential information
+      -x | --github               Operate in GitHub mode
+      -z | --script               Operate in script mode
+      -h | --help                 Display this help message
 
 
 
@@ -139,6 +147,16 @@ Adding secrets should NOT cause the tag to change:
   $ export SECRET1="MyPassword"
   $ export SECRET2="Hunter2"
   $ ./hn2b.sh -q --secret "id=SECRET1" --secret "id=SECRET2" hn2b-test test/image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+
+Adding sub-args should NOT cause the tag to change:
+
+  $ ./hn2b.sh -q --sub-arg "PING=7" --sub-arg "PONG=8" hn2b-test test/image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+
+Adding sub-context should NOT cause the tag to change:
+
+  $ ./hn2b.sh -q --sub-context test/subcontext/subdir hn2b-test test/image
   Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 Use GitHub mode to pass argument through environment variables:
@@ -287,3 +305,53 @@ The user can add secrets:
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset SECRETS
+
+The user can add sub-args:
+
+  $ cat <<EOF > /tmp/sub_args.txt
+  > PING=7
+  > PONG=8
+  > EOF
+  $ SUB_BUILD_ARGS=$(cat /tmp/sub_args.txt)
+  $ export SUB_BUILD_ARGS
+  $ ./hn2b.sh -q --github
+  ::group::Make the context
+  ::endgroup::
+  ::group::Generate the tag
+  ::endgroup::
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  ::group::Check if the image exists
+  ::endgroup::
+  ::group::Build (or not build) the image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
+  WAS_PULLED=false
+  WAS_BUILT=false
+  $ unset SUB_BUILD_ARGS
+
+The user can add sub-context:
+
+  $ cat <<EOF > /tmp/sub_contexts.txt
+  > test/subcontext/subdir
+  > test/subcontext/other
+  > EOF
+  $ SUB_CONTEXT_DIRS=$(cat /tmp/sub_contexts.txt)
+  $ export SUB_CONTEXT_DIRS
+  $ ./hn2b.sh -q --github
+  ::group::Make the context
+  ::endgroup::
+  ::group::Generate the tag
+  ::endgroup::
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  ::group::Check if the image exists
+  ::endgroup::
+  ::group::Build (or not build) the image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
+  WAS_PULLED=false
+  WAS_BUILT=false
+  $ unset SUB_CONTEXT_DIRS

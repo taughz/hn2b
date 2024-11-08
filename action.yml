@@ -47,6 +47,21 @@ inputs:
       tag generation.
     required: false
     default: ''
+  sub-build-args:
+    description: >-
+      Optional secondary build arguments to supply to the Docker build. They
+      will not participate in tag generation. (Don't use this unless you know
+      what you're doing.)
+    required: false
+    default: ''
+  sub-contexts:
+    description: >-
+      Optional secondary Docker build context. Each directory will get injected
+      into the main build context under the 'subcontext' directory, but these
+      directories will not participate in tag generation. (Don't use this unless
+      you know what you're doing.)
+    required: false
+    default: ''
   only-pull:
     description: >-
       Only attempt to pull the image. Do not build the image.
@@ -122,6 +137,8 @@ runs:
         BASE_IMAGE: '${{ inputs.base-image }}'
         BUILD_ARGS: '${{ inputs.build-args }}'
         SECRETS: '${{ inputs.secrets }}'
+        SUB_BUILD_ARGS: '${{ inputs.sub-build-args }}'
+        SUB_CONTEXT_DIRS: '${{ inputs.sub-contexts }}'
         ONLY_PULL: '${{ inputs.only-pull }}'
         SKIP_PULL: '${{ inputs.skip-pull }}'
         DO_PUSH: '${{ inputs.push }}'

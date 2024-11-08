@@ -45,6 +45,11 @@ jobs:
           build-args: |
             FOO=${{ env.RANDOM1 }}
             BAR=${{ env.RANDOM2 }}
+          sub-build-args: |
+            PING=7
+            PONG=8
+          sub-contexts: |
+            test/subcontext/subdir
           registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
       - name: 'Check Built Image'
         run: |
@@ -82,6 +87,11 @@ jobs:
           build-args: |
             FOO=${{ env.RANDOM1 }}
             BAR=${{ env.RANDOM2 }}
+          sub-build-args: |
+            PING=5
+            PONG=6
+          sub-contexts: |
+            test/subcontext/other
           registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
       - name: 'Check Not Built Image'
         run: |

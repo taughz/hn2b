@@ -33,31 +33,35 @@ REGCTL_URL="https://github.com/regclient/regclient/releases/latest/download/regc
 show_usage() {
     cat <<EOF >&2
 Usage: $(basename "$0") [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-            [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-j | --only-pull]
-            [-o | --skip-pull] [-p | --push] [-u | --user USER] [-r | --pass PASS]
-            [-k | --no-cache] [-n | --name] [-l | --log] [-q | --quiet]
-            [-x | --github ] [-z | --script] [-h | --help]
+            [-a | --arg BUILD_ARG] [-s | --secret SECRET]
+            [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
+            [-j | --only-pull] [-o | --skip-pull] [-p | --push]
+            [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
+            [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
+            [-z | --script] [-h | --help]
             TARGET_IMAGE [CONTEXT_DIR]
 
 Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
 '[REG/][NS/**/]REPO[:TAG]', using CONTEXT_DIR as the context.
 
-    -f | --file DOCKERFILE  Dockerfile to use for the build
-    -b | --base BASE_IMAGE  Base image to use for the build
-    -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
-    -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
-    -j | --only-pull        Only pull the image, don't build
-    -o | --skip-pull        Just exit instead of pulling remote images
-    -p | --push             Push the newly built container
-    -u | --user USER        User to use during registry login
-    -r | --pass PASS        Password or token to use during registry login
-    -k | --no-cache         Build without using cache
-    -n | --name             Display the name of the image only
-    -l | --log              Display plain progress during build
-    -q | --quiet            Display only essential information
-    -x | --github           Operate in GitHub mode
-    -z | --script           Operate in script mode
-    -h | --help             Display this help message
+    -f | --file DOCKERFILE      Dockerfile to use for the build
+    -b | --base BASE_IMAGE      Base image to use for the build
+    -a | --arg BUILD_ARG        A build argument, e.g., 'NAME=VALUE'
+    -s | --secret SECRET        A secret argument, e.g., 'NAME=VALUE'
+    --sub-arg BUILD_ARG         Sub build args not affecting tag generation
+    --sub-context CONTEXT_DIR   Sub context not affecting tag generation
+    -j | --only-pull            Only pull the image, don't build
+    -o | --skip-pull            Just exit instead of pulling remote images
+    -p | --push                 Push the newly built container
+    -u | --user USER            User to use during registry login
+    -r | --pass PASS            Password or token to use during registry login
+    -k | --no-cache             Build without using cache
+    -n | --name                 Display the name of the image only
+    -l | --log                  Display plain progress during build
+    -q | --quiet                Display only essential information
+    -x | --github               Operate in GitHub mode
+    -z | --script               Operate in script mode
+    -h | --help                 Display this help message
 EOF
 }
 
@@ -246,6 +250,8 @@ dockerfile="Dockerfile"
 base_image=""
 build_args=()
 secrets=()
+sub_build_args=()
+sub_context_dirs=()
 only_pull=0
 skip_pull=0
 do_push=0
@@ -272,6 +278,8 @@ while [ $# -gt 0 ]; do
     elif match_opt_v -b --base "$1" "${2:-}" base_image extra_shift; then :
     elif match_opt_v -a --arg "$1" "${2:-}" build_args+ extra_shift; then :
     elif match_opt_v -s --secret "$1" "${2:-}" secrets+ extra_shift; then :
+    elif match_opt_v "" --sub-arg "$1" "${2:-}" sub_build_args+ extra_shift; then :
+    elif match_opt_v "" --sub-context "$1" "${2:-}" sub_context_dirs+ extra_shift; then :
     elif match_opt_b -j --only-pull "$1" only_pull replace_arg; then :
     elif match_opt_b -o --skip-pull "$1" skip_pull replace_arg; then :
     elif match_opt_b -p --push "$1" do_push replace_arg; then :
@@ -325,6 +333,12 @@ else
     if [ -n "${SECRETS:-}" ]; then
         readarray -t secrets <<< "$SECRETS"
     fi
+    if [ -n "${SUB_BUILD_ARGS:-}" ]; then
+        readarray -t sub_build_args <<< "$SUB_BUILD_ARGS"
+    fi
+    if [ -n "${SUB_CONTEXT_DIRS:-}" ]; then
+        readarray -t sub_context_dirs <<< "$SUB_CONTEXT_DIRS"
+    fi
     only_pull=$(truthy_to_num "${ONLY_PULL:-}")
     skip_pull=$(truthy_to_num "${SKIP_PULL:-}")
     do_push=$(truthy_to_num "${DO_PUSH:-}")
@@ -336,6 +350,8 @@ fi
 
 remove_empty build_args
 remove_empty secrets
+remove_empty sub_build_args
+remove_empty sub_context_dirs
 
 # Turn script mode on for GitHub
 if [ $github_mode -ne 0 ]; then
@@ -363,12 +379,6 @@ if ! command -v regctl &> /dev/null && [ $show_name -eq 0 ]; then
     fi
 fi
 
-####################
-# MAKE THE CONTEXT #
-####################
-
-group "Make the context"
-
 if [ ! -d $context_dir ]; then
     err_echo "The context must be a directory!"
     exit 1
@@ -378,6 +388,20 @@ if [ ! -f "$context_dir/$dockerfile" ]; then
     err_echo "The Dockerfile must be a file in the context directory!"
     exit 1
 fi
+
+for sub_context_dir in "${sub_context_dirs[@]}"; do
+    if [ ! -d $sub_context_dir ]; then
+        err_echo "Each sub-context must be a directory!"
+        exit 1
+    fi
+done
+
+
+####################
+# MAKE THE CONTEXT #
+####################
+
+group "Make the context"
 
 context_tarball=$(mktemp)
 (cd $context_dir && tar --create --dereference -f $context_tarball .)
@@ -523,6 +547,21 @@ if [ $rebuild -eq 0 -a $has_remote_image -ne 0 -o $only_pull -ne 0 ]; then
     exit 0
 fi
 
+# Add the sub-context to the context tarball. We delay doing this until now
+# because we don't want the sub-context to influence hash generation.
+if [ ${#sub_context_dirs[@]} -ne 0 ]; then
+    tmp_context_dir=$(mktemp -d)
+    tmp_sub_context="$tmp_context_dir/subcontext"
+    mkdir $tmp_sub_context
+    for sub_context_dir in "${sub_context_dirs[@]}"; do
+        tmp_sub_context_dir="$tmp_sub_context/$(basename $sub_context_dir)"
+        mkdir $tmp_sub_context_dir
+        (cd $sub_context_dir && tar --create --dereference .) \
+            | (cd $tmp_sub_context_dir && tar --extract)
+    done
+    (cd $tmp_context_dir && tar --append -f $context_tarball .)
+fi
+
 args_base_image=()
 if [ -n "$base_image" ]; then
     args_base_image=("--build-arg" "BASE_IMAGE=$base_image")
@@ -530,6 +569,11 @@ fi
 
 args_build_args=()
 for ba in "${build_args[@]}"; do
+    args_build_args+=("--build-arg" "$ba")
+done
+
+# Add sub build arguments which do not participate in the context
+for ba in "${sub_build_args[@]}"; do
     args_build_args+=("--build-arg" "$ba")
 done
 
