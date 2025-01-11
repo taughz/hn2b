@@ -472,7 +472,7 @@ fi
 
 # Pushing does not make sense if there's no registry
 if [ $has_registry -eq 0 -a $do_push -ne 0 ]; then
-    err_echo "Can not push if there is no registry!" >&2
+    err_echo "Can not push if there is no registry!"
     exit 1
 fi
 
@@ -487,9 +487,16 @@ if [ $has_registry -ne 0 ]; then
         regctl registry login $registry --user $registry_user --pass $registry_pass >&2
         docker login --username $registry_user --password $registry_pass $registry >&2
     fi
-    repo_tags=$(regctl tag ls $target_repo)
-    if echo "$repo_tags" | grep -q $generated_tag; then
+    # Check remote tags (which will fail if the repo does not exist)
+    remote_tags=$(regctl tag ls $target_repo 2> /dev/null || true)
+    if echo "$remote_tags" | grep -q "^$generated_tag$"; then
         has_remote_image=1
+    else
+        # Check if the failure was due to not being logged in
+        if ! regctl repo ls --limit 1 $registry &> /dev/null; then
+            err_echo "Failed to connect to registry!"
+            exit 1
+        fi
     fi
 fi
 
