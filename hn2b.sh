@@ -487,9 +487,12 @@ if [ $has_registry -ne 0 ]; then
         regctl registry login $registry --user $registry_user --pass $registry_pass >&2
         docker login --username $registry_user --password $registry_pass $registry >&2
     fi
-    # Check remote tags (which will fail if the repo does not exist)
-    remote_tags=$(regctl tag ls $target_repo 2> /dev/null || true)
-    if echo "$remote_tags" | grep -q "^$generated_tag$"; then
+    # Check remote tags (which will fail if the repo does not exist). Use
+    # '--include' to only get the matching tag; if the tag doesn't exist, the
+    # output will be blank. It's ok to use the tag as a regex here, because tags
+    # only contain '[A-Za-z0-9_.-]' characters.
+    remote_tag=$(regctl tag ls --include $generated_tag $target_repo 2> /dev/null || true)
+    if [ -n "$remote_tag" ]; then
         has_remote_image=1
     else
         # Check if the failure was due to not being logged in
