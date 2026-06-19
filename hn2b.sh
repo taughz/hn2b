@@ -201,7 +201,7 @@ remove_empty() {
 truthy_to_num() {
     case "$1" in
         [Yy]|[Yy][Ee][Ss]|[Tt]|[Tt][Rr][Uu][Ee]|1) echo 1;;
-        [Nn]|[Nn][Oo]|[Ff]|[Fs][Aa][Ll][Ss][Ee]|0) echo 0;;
+        [Nn]|[Nn][Oo]|[Ff]|[Ff][Aa][Ll][Ss][Ee]|0) echo 0;;
         *) truthy_to_num "${2:-0}" 0;;
     esac
 }
