@@ -484,8 +484,8 @@ fi
 has_remote_image=0
 if [ $has_registry -ne 0 ]; then
     if [ -n "$registry_user" -a -n "$registry_pass" ]; then
-        regctl registry login $registry --user $registry_user --pass $registry_pass >&2
-        docker login --username $registry_user --password $registry_pass $registry >&2
+        echo "$registry_pass" | regctl registry login --user $registry_user --pass-stdin $registry >&2
+        echo "$registry_pass" | docker login --username $registry_user --password-stdin $registry >&2
     fi
     # Check remote tags (which will fail if the repo does not exist). Use
     # '--include' to only get the matching tag; if the tag doesn't exist, the
