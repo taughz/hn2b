@@ -5,7 +5,14 @@
 name: Test HN2B Script
 
 on:
-  - push
+  push:
+    branches:
+      - main
+    tags:
+      - "**"
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
