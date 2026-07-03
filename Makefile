@@ -18,7 +18,18 @@ endif
 
 .PHONY: all
 all:
-> @echo "Nothing to do, try 'make test'" >&2
+> @echo "Nothing to do, try 'make check' or 'make test'" >&2
+
+.PHONY: lint_check_reqs
+lint_check_reqs:
+> @if ! command -v shellcheck > /dev/null; then
+>     echo "Linting requires ShellCheck to be installed!" >&2
+>     exit 1
+> fi
+
+.PHONY: lint
+lint: lint_check_reqs
+> shellcheck hn2b.sh
 
 .PHONY: test_check_reqs
 test_check_reqs:

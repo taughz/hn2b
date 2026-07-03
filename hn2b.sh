@@ -366,6 +366,7 @@ fi
 
 # Check for Regctl (unless we just need the name)
 if ! command -v regctl &> /dev/null && [ $show_name -eq 0 ]; then
+    warn_echo "The command 'regctl' is not in PATH, downloading it now..."
     if ! command -v curl &> /dev/null; then
         err_echo "The command 'curl' must be in PATH!"
         exit 1

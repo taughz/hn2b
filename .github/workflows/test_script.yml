@@ -23,6 +23,9 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: Install Regctl
         uses: regclient/actions/regctl-installer@087497936f11371287370b6d4e1e694e66ebd744
+      - name: Run Lint
+        run: |
+          make lint
       - name: Run Tests
         run: |
           make test
