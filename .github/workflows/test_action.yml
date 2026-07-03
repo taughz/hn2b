@@ -2,37 +2,37 @@
 
 # Copyright (c) 2024 Tim Perkins
 
-name: 'Test HN2B Action'
+name: Test HN2B Action
 
-on: ['push']
+on:
+  - push
 
 jobs:
   test:
-    name: >-
-      Test HN2B Action
-    runs-on: 'ubuntu-latest'
+    name: Test HN2B Action
+    runs-on: ubuntu-latest
     outputs:
-      random1: '${{ env.RANDOM1 }}'
-      random2: '${{ env.RANDOM2 }}'
-      image: '${{ env.IMAGE }}'
+      random1: ${{ env.RANDOM1 }}
+      random2: ${{ env.RANDOM2 }}
+      image: ${{ env.IMAGE }}
     steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@v4'
-      - name: 'Get a random number'
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get a random number
         run: |
           echo "RANDOM1=$RANDOM" >> $GITHUB_ENV
           echo "RANDOM2=$RANDOM" >> $GITHUB_ENV
-      - name: 'Get Image Name'
-        id: 'image-name'
-        uses: './'
+      - name: Get Image Name
+        id: image-name
+        uses: ./
         with:
-          image: 'ghcr.io/taughz/hn2b-test'
-          context: 'test/image'
+          image: ghcr.io/taughz/hn2b-test
+          context: test/image
           build-args: |
             FOO=${{ env.RANDOM1 }}
             BAR=${{ env.RANDOM2 }}
           name-only: true
-      - name: 'Check Image Name'
+      - name: Check Image Name
         run: |
           IMAGE=${{ steps.image-name.outputs.image }}
           if ! echo "$IMAGE" | grep -Eq ':hn2b-[a-z0-9]{32}'; then
@@ -40,12 +40,12 @@ jobs:
               exit 1
           fi
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-      - name: 'Build Image'
-        id: 'build-image'
-        uses: './'
+      - name: Build Image
+        id: build-image
+        uses: ./
         with:
-          image: 'ghcr.io/taughz/hn2b-test'
-          context: 'test/image'
+          image: ghcr.io/taughz/hn2b-test
+          context: test/image
           build-args: |
             FOO=${{ env.RANDOM1 }}
             BAR=${{ env.RANDOM2 }}
@@ -54,8 +54,8 @@ jobs:
             PONG=8
           sub-contexts: |
             test/subcontext/subdir
-          registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
-      - name: 'Check Built Image'
+          registry-pass: ${{ secrets.REGISTRY_TOKEN }}
+      - name: Check Built Image
         run: |
           BUILT_IMAGE=${{ steps.build-image.outputs.image }}
           if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
@@ -82,12 +82,12 @@ jobs:
               echo "Expected the image to be built!" >&2
               exit 1
           fi
-      - name: 'Build (Or Not Build) Image Again'
-        id: 'not-build-image'
-        uses: './'
+      - name: Build (Or Not Build) Image Again
+        id: not-build-image
+        uses: ./
         with:
-          image: 'ghcr.io/taughz/hn2b-test'
-          context: 'test/image'
+          image: ghcr.io/taughz/hn2b-test
+          context: test/image
           build-args: |
             FOO=${{ env.RANDOM1 }}
             BAR=${{ env.RANDOM2 }}
@@ -96,8 +96,8 @@ jobs:
             PONG=6
           sub-contexts: |
             test/subcontext/other
-          registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
-      - name: 'Check Not Built Image'
+          registry-pass: ${{ secrets.REGISTRY_TOKEN }}
+      - name: Check Not Built Image
         run: |
           BUILT_IMAGE=${{ steps.not-build-image.outputs.image }}
           if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
@@ -124,12 +124,12 @@ jobs:
               echo "Expected the image to NOT be built!" >&2
               exit 1
           fi
-      - name: 'Push Image'
-        id: 'push-image'
-        uses: './'
+      - name: Push Image
+        id: push-image
+        uses: ./
         with:
-          image: 'ghcr.io/taughz/hn2b-test'
-          context: 'test/image'
+          image: ghcr.io/taughz/hn2b-test
+          context: test/image
           build-args: |
             FOO=${{ env.RANDOM1 }}
             BAR=${{ env.RANDOM2 }}
@@ -137,8 +137,8 @@ jobs:
           # want), we must force a rebuild with the 'no-cache' option
           push: true
           no-cache: true
-          registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
-      - name: 'Check Pushed Image'
+          registry-pass: ${{ secrets.REGISTRY_TOKEN }}
+      - name: Check Pushed Image
         run: |
           BUILT_IMAGE=${{ steps.push-image.outputs.image }}
           if [ -z "$BUILT_IMAGE" -o "$BUILT_IMAGE" != "$IMAGE" ]; then
@@ -167,24 +167,24 @@ jobs:
           fi
 
   test_pull:
-    name: >-
-      Test HN2B Action (Pull)
-    runs-on: 'ubuntu-latest'
-    needs: ['test']
+    name: Test HN2B Action (Pull)
+    runs-on: ubuntu-latest
+    needs:
+      - test
     steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@v4'
-      - name: 'Build (Or Pull) Image Again'
-        id: 'pull-image'
-        uses: './'
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build (Or Pull) Image Again
+        id: pull-image
+        uses: ./
         with:
-          image: 'ghcr.io/taughz/hn2b-test'
-          context: 'test/image'
+          image: ghcr.io/taughz/hn2b-test
+          context: test/image
           build-args: |
             FOO=${{ needs.test.outputs.random1 }}
             BAR=${{ needs.test.outputs.random2 }}
-          registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
-      - name: 'Check Pulled Image'
+          registry-pass: ${{ secrets.REGISTRY_TOKEN }}
+      - name: Check Pulled Image
         run: |
           IMAGE=${{ needs.test.outputs.image }}
           BUILT_IMAGE=${{ steps.pull-image.outputs.image }}
@@ -214,25 +214,25 @@ jobs:
           fi
 
   test_skip_pull:
-    name: >-
-      Test HN2B Action (Skip Pull)
-    runs-on: 'ubuntu-latest'
-    needs: ['test']
+    name: Test HN2B Action (Skip Pull)
+    runs-on: ubuntu-latest
+    needs:
+      - test
     steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@v4'
-      - name: 'Build (Or Not Pull) Image Again'
-        id: 'skip-pull-image'
-        uses: './'
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build (Or Not Pull) Image Again
+        id: skip-pull-image
+        uses: ./
         with:
-          image: 'ghcr.io/taughz/hn2b-test'
-          context: 'test/image'
+          image: ghcr.io/taughz/hn2b-test
+          context: test/image
           build-args: |
             FOO=${{ needs.test.outputs.random1 }}
             BAR=${{ needs.test.outputs.random2 }}
-          registry-pass: '${{ secrets.REGISTRY_TOKEN }}'
+          registry-pass: ${{ secrets.REGISTRY_TOKEN }}
           skip-pull: true
-      - name: 'Check Not Pulled Image'
+      - name: Check Not Pulled Image
         run: |
           IMAGE=${{ needs.test.outputs.image }}
           BUILT_IMAGE=${{ steps.skip-pull-image.outputs.image }}
