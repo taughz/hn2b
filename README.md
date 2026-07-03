@@ -52,28 +52,35 @@ As a script:
 ``` text
 $ ./hn2b.sh --help
 Usage: hn2b.sh [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
-            [-a | --arg BUILD_ARG] [-s | --secret SECRET] [-p | --push]
+            [-a | --arg BUILD_ARG] [-s | --secret SECRET]
+            [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
+            [-j | --only-pull] [-o | --skip-pull] [-p | --push]
             [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
             [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-            [-h | --help]
+            [-z | --script] [-h | --help]
             TARGET_IMAGE [CONTEXT_DIR]
 
 Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
 '[REG/][NS/**/]REPO[:TAG]', using CONTEXT_DIR as the context.
 
-    -f | --file DOCKERFILE  Dockerfile to use for the build
-    -b | --base BASE_IMAGE  Base image to use for the build
-    -a | --arg BUILD_ARG    A build argument, e.g., 'NAME=VALUE'
-    -s | --secret SECRET    A secret argument, e.g., 'NAME=VALUE'
-    -p | --push             Push the newly built container
-    -u | --user USER        User to use during registry login
-    -r | --pass PASS        Password or token to use during registry login
-    -k | --no-cache         Build without using cache
-    -n | --name             Display the name of the image only
-    -l | --log              Display plain progress during build
-    -q | --quiet            Display only essential information
-    -x | --github           Operate in GitHub mode
-    -h | --help             Display this help message
+    -f | --file DOCKERFILE      Dockerfile to use for the build
+    -b | --base BASE_IMAGE      Base image to use for the build
+    -a | --arg BUILD_ARG        A build argument, e.g., 'NAME=VALUE'
+    -s | --secret SECRET        A secret argument, e.g., 'NAME=VALUE'
+    --sub-arg BUILD_ARG         Sub build args not affecting tag generation
+    --sub-context CONTEXT_DIR   Sub context not affecting tag generation
+    -j | --only-pull            Only pull the image, don't build
+    -o | --skip-pull            Just exit instead of pulling remote images
+    -p | --push                 Push the newly built container
+    -u | --user USER            User to use during registry login
+    -r | --pass PASS            Password or token to use during registry login
+    -k | --no-cache             Build without using cache
+    -n | --name                 Display the name of the image only
+    -l | --log                  Display plain progress during build
+    -q | --quiet                Display only essential information
+    -x | --github               Operate in GitHub mode
+    -z | --script               Operate in script mode
+    -h | --help                 Display this help message
 ```
 
 As a GitHub action:
