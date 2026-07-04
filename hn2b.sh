@@ -25,7 +25,11 @@ set -o pipefail
 IFS=$'\n\t'
 
 ARCH=$(dpkg --print-architecture)
-REGCTL_URL="https://github.com/regclient/regclient/releases/latest/download/regctl-linux-$ARCH"
+REGCTL_VERSION="v0.11.5"
+REGCTL_URL="https://github.com/regclient/regclient/releases/download/$REGCTL_VERSION/regctl-linux-$ARCH"
+REGCTL_META_URL="https://github.com/regclient/regclient/releases/download/$REGCTL_VERSION/metadata.tgz"
+REGCTL_COSIGN_OIDC_ISSUER="https://token.actions.githubusercontent.com"
+REGCTL_COSIGN_IDENT_REGEXP="https://github.com/regclient/regclient/.github/workflows/"
 
 # Usage: show_usage
 #
@@ -372,9 +376,22 @@ if ! command -v regctl &> /dev/null && [ $show_name -eq 0 ]; then
         exit 1
     fi
     REGCTL_BIN=$HOME/.local/bin/regctl
-    mkdir -p $(dirname $REGCTL_BIN)
-    curl -fsSL "$REGCTL_URL" > $REGCTL_BIN
-    chmod +x $REGCTL_BIN
+    regctl_tmp_dir=$(mktemp -d)
+    regctl_tmp_bin="$regctl_tmp_dir/$(basename $REGCTL_BIN)"
+    curl -fsSL "$REGCTL_URL" > "$regctl_tmp_bin"
+    if command -v cosign &> /dev/null; then
+        curl -fsSL "$REGCTL_META_URL" > "$regctl_tmp_dir/metadata.tgz"
+        (cd $regctl_tmp_dir && tar --extract -f "metadata.tgz" "regctl-linux-$ARCH.sigstore.json")
+        echo -n "Output from 'cosign' verification: " >&2
+        cosign verify-blob \
+            --certificate-oidc-issuer "$REGCTL_COSIGN_OIDC_ISSUER" \
+            --certificate-identity-regexp "$REGCTL_COSIGN_IDENT_REGEXP" \
+            --bundle "$regctl_tmp_dir/regctl-linux-$ARCH.sigstore.json" \
+            "$regctl_tmp_bin" >&2
+    else
+        warn_echo "The command 'cosign' is not in PATH, skipping 'regctl' verification!"
+    fi
+    install -D -m 755 "$regctl_tmp_bin" $REGCTL_BIN
     if ! echo $PATH | grep -q $(dirname $REGCTL_BIN); then
         PATH="$(dirname $REGCTL_BIN):$PATH"
     fi
