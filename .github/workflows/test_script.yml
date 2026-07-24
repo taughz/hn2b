@@ -27,6 +27,10 @@ jobs:
         uses: regclient/actions/regctl-installer@087497936f11371287370b6d4e1e694e66ebd744
         with:
           release: v0.11.5
+      - name: Install Prysk
+        run: |
+          # The flag may or may not be necessary because there is no Venv
+          pip install --break-system-packages prysk
       - name: Run Lint
         run: |
           make lint
