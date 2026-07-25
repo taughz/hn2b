@@ -93,6 +93,21 @@ inputs:
       Force a rebuild of the image, and do not use cache.
     required: false
     default: false
+  cache-from:
+    description: >-
+      Optional cache sources for the Docker build. Defaults to the target image,
+      if and only if it has a registry and an explicit tag; generated tags are
+      not considered. Set to 'none' to disable.
+    required: false
+    default: ''
+  cache-to:
+    description: >-
+      Optional cache destinations for the Docker build. Defaults to inline
+      cache, if and only if the target image has a registry. (Note that the
+      image must be pushed to a registry to be later used as a cache source.)
+      Set to 'none' to disable.
+    required: false
+    default: ''
   name-only:
     description: >-
       Only generate the tag, and print the resulting image name. Do not actually
@@ -145,6 +160,8 @@ runs:
         REGISTRY_USER: '${{ inputs.registry-user }}'
         REGISTRY_PASS: '${{ inputs.registry-pass }}'
         NO_CACHE: '${{ inputs.no-cache }}'
+        CACHE_FROM: '${{ inputs.cache-from }}'
+        CACHE_TO: '${{ inputs.cache-to }}'
         NAME_ONLY: '${{ inputs.name-only }}'
       run: |
         $GITHUB_ACTION_PATH/hn2b.sh --github >> $GITHUB_OUTPUT

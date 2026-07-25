@@ -41,8 +41,9 @@ Usage: $(basename "$0") [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
             [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
             [-j | --only-pull] [-o | --skip-pull] [-p | --push]
             [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
-            [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-            [-z | --script] [-h | --help]
+            [--cache-from CACHE] [--cache-to CACHE] [-n | --name]
+            [-l | --log] [-q | --quiet] [-x | --github ] [-z | --script]
+            [-h | --help]
             TARGET_IMAGE [CONTEXT_DIR]
 
 Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -60,6 +61,8 @@ Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
     -u | --user USER            User to use during registry login
     -r | --pass PASS            Password or token to use during registry login
     -k | --no-cache             Build without using cache
+    --cache-from CACHE          Cache source, or 'none' to disable
+    --cache-to CACHE            Cache destination, or 'none' to disable
     -n | --name                 Display the name of the image only
     -l | --log                  Display plain progress during build
     -q | --quiet                Display only essential information
@@ -187,6 +190,7 @@ match_opt_b() {
 #
 # Remove empty elements from the given array.
 remove_empty() {
+    # shellcheck disable=SC2178
     declare -n arrayref=$1
     local array=()
     local element
@@ -197,6 +201,21 @@ remove_empty() {
         array+=("$element")
     done
     arrayref=("${array[@]}")
+}
+
+# Usage: has_none ARRAYREF
+#
+# Check if the given array contains the 'none' sentinel.
+has_none() {
+    # shellcheck disable=SC2178
+    declare -n arrayref=$1
+    local element
+    for element in "${arrayref[@]}"; do
+        if echo "$element" | grep -qi "^none\$"; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 # Usage: truthy_to_num STR [DEFAULT]
@@ -262,6 +281,10 @@ do_push=0
 registry_user=${REGISTRY_USER:-}
 registry_pass=${REGISTRY_PASS:-}
 no_cache=0
+cache_from=()
+cache_to=()
+no_cache_from=0
+no_cache_to=0
 show_name=0
 show_log=0
 quiet_mode=0
@@ -290,6 +313,8 @@ while [ $# -gt 0 ]; do
     elif match_opt_v -u --user "$1" "${2:-}" registry_user extra_shift; then :
     elif match_opt_v -r --pass "$1" "${2:-}" registry_pass extra_shift; then :
     elif match_opt_b -k --no-cache "$1" no_cache replace_arg; then :
+    elif match_opt_v "" --cache-from "$1" "${2:-}" cache_from+ extra_shift; then :
+    elif match_opt_v "" --cache-to "$1" "${2:-}" cache_to+ extra_shift; then :
     elif match_opt_b -n --name "$1" show_name replace_arg; then :
     elif match_opt_b -l --log "$1" show_log replace_arg; then :
     elif match_opt_b -q --quiet "$1" quiet_mode replace_arg; then :
@@ -349,6 +374,12 @@ else
     [ -n "${REGISTRY_USER:-}" ] && registry_user=$REGISTRY_USER
     [ -n "${REGISTRY_PASS:-}" ] && registry_pass=$REGISTRY_PASS
     no_cache=$(truthy_to_num "${NO_CACHE:-}")
+    if [ -n "${CACHE_FROM:-}" ]; then
+        readarray -t cache_from <<< "$CACHE_FROM"
+    fi
+    if [ -n "${CACHE_TO:-}" ]; then
+        readarray -t cache_to <<< "$CACHE_TO"
+    fi
     show_name=$(truthy_to_num "${NAME_ONLY:-}")
 fi
 
@@ -356,6 +387,18 @@ remove_empty build_args
 remove_empty secrets
 remove_empty sub_build_args
 remove_empty sub_context_dirs
+remove_empty cache_from
+remove_empty cache_to
+
+# Check cache arguments for 'none' to disable the default
+if has_none cache_from || [ $no_cache -ne 0 ]; then
+    cache_from=()
+    no_cache_from=1
+fi
+if has_none cache_to; then
+    cache_to=()
+    no_cache_to=1
+fi
 
 # Turn script mode on for GitHub
 if [ $github_mode -ne 0 ]; then
@@ -445,10 +488,15 @@ endgroup
 
 group "Generate the tag"
 
+target_repo=$(echo $target_image | sed "s#:[^:/]\{1,\}\$##")
+has_target_tag=0
+if echo $target_image | grep -q ":[^:/]\{1,\}\$"; then
+    has_target_tag=1
+fi
+
 tmp_context_dir=$(mktemp -d)
 (cd $tmp_context_dir && tar --extract -f $context_tarball)
 generated_tag="hn2b-$(md5sum_dir_contents $tmp_context_dir)"
-target_repo=$(echo $target_image | cut -d ":" -f 1)
 generated_image="$target_repo:$generated_tag"
 
 endgroup
@@ -523,9 +571,9 @@ fi
 
 endgroup
 
-##################
-# BUILD AND PUSH #
-##################
+########################
+# BUILD (OR NOT BUILD) #
+########################
 
 group "Build (or not build) the image"
 
@@ -614,9 +662,28 @@ for sc in "${secrets[@]}"; do
     args_secrets+=("--secret" "$sc")
 done
 
-args_misc=()
+args_cache=()
+
+# Only consider cache sources when cache is enabled
 if [ $no_cache -ne 0 ]; then
-    args_misc=("--no-cache")
+    args_cache=("--no-cache")
+elif [ $no_cache_from -eq 0 ]; then
+    if [ ${#cache_from[@]} -eq 0 -a $has_registry -ne 0 -a $has_target_tag -ne 0 ]; then
+        cache_from=("type=registry,ref=$target_image")
+    fi
+    for cf in "${cache_from[@]}"; do
+        args_cache+=("--cache-from" "$cf")
+    done
+fi
+
+# We consider caching destinations even when cache is disabled
+if [ $no_cache_to -eq 0 ]; then
+    if [ ${#cache_to[@]} -eq 0 -a $has_registry -ne 0 ]; then
+        cache_to=("type=inline")
+    fi
+    for ct in "${cache_to[@]}"; do
+        args_cache+=("--cache-to" "$ct")
+    done
 fi
 
 if [ $show_log -ne 0 ]; then
@@ -624,7 +691,7 @@ if [ $show_log -ne 0 ]; then
 fi
 
 docker build --load $arg_quiet "${args_base_image[@]}" "${args_build_args[@]}" \
-    "${args_hn2b_tag[@]}" "${args_secrets[@]}" "${args_misc[@]}" \
+    "${args_hn2b_tag[@]}" "${args_secrets[@]}" "${args_cache[@]}" \
     --tag $generated_image --file $dockerfile - < $context_tarball >&2
 echo "Built: $generated_image" >&2
 
@@ -634,7 +701,7 @@ if [ $do_push -ne 0 ]; then
 fi
 
 # Tag the image if there was a tag supplied
-if echo $target_image | grep -q ":"; then
+if [ $has_target_tag -ne 0 ]; then
     docker tag $generated_image $target_image >&2
     echo "Tagged: $target_image" >&2
     if [ $do_push -ne 0 ]; then

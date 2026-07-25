@@ -19,8 +19,9 @@ Usage should print if no arguments are given:
               [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
               [-j | --only-pull] [-o | --skip-pull] [-p | --push]
               [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
-              [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-              [-z | --script] [-h | --help]
+              [--cache-from CACHE] [--cache-to CACHE] [-n | --name]
+              [-l | --log] [-q | --quiet] [-x | --github ] [-z | --script]
+              [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -38,6 +39,8 @@ Usage should print if no arguments are given:
       -u | --user USER            User to use during registry login
       -r | --pass PASS            Password or token to use during registry login
       -k | --no-cache             Build without using cache
+      --cache-from CACHE          Cache source, or 'none' to disable
+      --cache-to CACHE            Cache destination, or 'none' to disable
       -n | --name                 Display the name of the image only
       -l | --log                  Display plain progress during build
       -q | --quiet                Display only essential information
@@ -58,8 +61,9 @@ Using the '--help' option should also show usage:
               [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
               [-j | --only-pull] [-o | --skip-pull] [-p | --push]
               [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
-              [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-              [-z | --script] [-h | --help]
+              [--cache-from CACHE] [--cache-to CACHE] [-n | --name]
+              [-l | --log] [-q | --quiet] [-x | --github ] [-z | --script]
+              [-h | --help]
               TARGET_IMAGE [CONTEXT_DIR]
   
   Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -77,6 +81,8 @@ Using the '--help' option should also show usage:
       -u | --user USER            User to use during registry login
       -r | --pass PASS            Password or token to use during registry login
       -k | --no-cache             Build without using cache
+      --cache-from CACHE          Cache source, or 'none' to disable
+      --cache-to CACHE            Cache destination, or 'none' to disable
       -n | --name                 Display the name of the image only
       -l | --log                  Display plain progress during build
       -q | --quiet                Display only essential information
@@ -157,6 +163,13 @@ Adding sub-args should NOT cause the tag to change:
 Adding sub-context should NOT cause the tag to change:
 
   $ ./hn2b.sh -q --sub-context test/subcontext/subdir hn2b-test test/image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+
+Adding cache options should NOT cause the tag to change:
+
+  $ ./hn2b.sh -q --cache-from type=local,src=/tmp/cache hn2b-test test/image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  $ ./hn2b.sh -q --cache-to type=local,dest=/tmp/cache hn2b-test test/image
   Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
 
 Use GitHub mode to pass argument through environment variables:
@@ -355,3 +368,25 @@ The user can add sub-context:
   WAS_PULLED=false
   WAS_BUILT=false
   $ unset SUB_CONTEXT_DIRS
+
+The user can add cache options:
+
+  $ export CACHE_FROM="type=local,src=/tmp/cache"
+  $ export CACHE_TO="type=local,dest=/tmp/cache"
+  $ ./hn2b.sh -q --github
+  ::group::Make the context
+  ::endgroup::
+  ::group::Generate the tag
+  ::endgroup::
+  GENERATED_IMAGE=hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  ::group::Check if the image exists
+  ::endgroup::
+  ::group::Build (or not build) the image
+  Has: hn2b-test:hn2b-03c78e136d7e7e8ba581e776485050f2
+  ::endgroup::
+  HAD_IMAGE=true
+  HAD_REMOTE_IMAGE=(true|false) (re)
+  WAS_PULLED=false
+  WAS_BUILT=false
+  $ unset CACHE_FROM
+  $ unset CACHE_TO

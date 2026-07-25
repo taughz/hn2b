@@ -56,8 +56,9 @@ Usage: hn2b.sh [-f | --file DOCKERFILE] [-b | --base BASE_IMAGE]
             [--sub-arg BUILD_ARG] [--sub-context CONTEXT_DIR]
             [-j | --only-pull] [-o | --skip-pull] [-p | --push]
             [-u | --user USER] [-r | --pass PASS] [-k | --no-cache]
-            [-n | --name] [-l | --log] [-q | --quiet] [-x | --github ]
-            [-z | --script] [-h | --help]
+            [--cache-from CACHE] [--cache-to CACHE] [-n | --name]
+            [-l | --log] [-q | --quiet] [-x | --github ] [-z | --script]
+            [-h | --help]
             TARGET_IMAGE [CONTEXT_DIR]
 
 Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
@@ -75,6 +76,8 @@ Build (or not build) a Docker image named TARGET_IMAGE, i.e.,
     -u | --user USER            User to use during registry login
     -r | --pass PASS            Password or token to use during registry login
     -k | --no-cache             Build without using cache
+    --cache-from CACHE          Cache source, or 'none' to disable
+    --cache-to CACHE            Cache destination, or 'none' to disable
     -n | --name                 Display the name of the image only
     -l | --log                  Display plain progress during build
     -q | --quiet                Display only essential information
