@@ -604,7 +604,7 @@ if [ $rebuild -eq 0 -a $has_image -ne 0 ]; then
         docker tag $generated_image $target_image >&2
         echo "Tagged: $target_image" >&2
         if [ $do_push -ne 0 ]; then
-            regctl image copy $generated_image $target_image >&2
+            regctl image copy $generated_image $target_image > /dev/null
             echo "Pushed: $target_image" >&2
         fi
     fi
@@ -633,7 +633,7 @@ if [ $rebuild -eq 0 -a $has_remote_image -ne 0 -o $only_pull -ne 0 ]; then
         fi
         # Copy the remote image to the target tag if push is given
         if [ $has_target_tag -ne 0 -a $do_push -ne 0 ]; then
-            regctl image copy $generated_image $target_image >&2
+            regctl image copy $generated_image $target_image > /dev/null
             echo "Pushed: $target_image" >&2
         fi
     else
@@ -731,7 +731,7 @@ if [ $has_target_tag -ne 0 ]; then
     docker tag $generated_image $target_image >&2
     echo "Tagged: $target_image" >&2
     if [ $do_push -ne 0 ]; then
-        regctl image copy $generated_image $target_image >&2
+        regctl image copy $generated_image $target_image > /dev/null
         echo "Pushed: $target_image" >&2
     fi
 fi
