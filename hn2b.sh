@@ -583,9 +583,31 @@ if [ $only_pull -ne 0 -o $skip_pull -ne 0 ]; then
     rebuild=0
 fi
 
+arg_quiet=""
+if [ $quiet_mode -ne 0 ]; then
+    arg_quiet="--quiet"
+fi
+
 # No-op if we already have the image
 if [ $rebuild -eq 0 -a $has_image -ne 0 ]; then
     echo "Has: $generated_image" >&2
+    if [ $do_push -ne 0 ]; then
+        # Only push the image if it hasn't already been pushed
+        if [ $has_remote_image -eq 0 ]; then
+            docker push $arg_quiet $generated_image >&2
+            echo "Pushed: $generated_image" >&2
+        else
+            echo "Remote: $generated_image" >&2
+        fi
+    fi
+    if [ $has_target_tag -ne 0 ]; then
+        docker tag $generated_image $target_image >&2
+        echo "Tagged: $target_image" >&2
+        if [ $do_push -ne 0 ]; then
+            regctl image copy $generated_image $target_image >&2
+            echo "Pushed: $target_image" >&2
+        fi
+    fi
     endgroup
     if [ $script_mode -ne 0 ]; then
         echo "HAD_IMAGE=$(num_to_bool $has_image)"
@@ -596,19 +618,23 @@ if [ $rebuild -eq 0 -a $has_image -ne 0 ]; then
     exit 0
 fi
 
-arg_quiet=""
-if [ $quiet_mode -ne 0 ]; then
-    arg_quiet="--quiet"
-fi
-
 # Pull the image if available
 if [ $rebuild -eq 0 -a $has_remote_image -ne 0 -o $only_pull -ne 0 ]; then
     if [ $has_remote_image -ne 0 ]; then
         if [ $skip_pull -eq 0 ]; then
             docker pull $arg_quiet $generated_image  >&2
             echo "Has: $generated_image" >&2
+            if [ $has_target_tag -ne 0 ]; then
+                docker tag $generated_image $target_image >&2
+                echo "Tagged: $target_image" >&2
+            fi
         else
             echo "Remote: $generated_image" >&2
+        fi
+        # Copy the remote image to the target tag if push is given
+        if [ $has_target_tag -ne 0 -a $do_push -ne 0 ]; then
+            regctl image copy $generated_image $target_image >&2
+            echo "Pushed: $target_image" >&2
         fi
     else
         echo "Missing: $generated_image" >&2
@@ -705,7 +731,7 @@ if [ $has_target_tag -ne 0 ]; then
     docker tag $generated_image $target_image >&2
     echo "Tagged: $target_image" >&2
     if [ $do_push -ne 0 ]; then
-        docker push $arg_quiet $target_image >&2
+        regctl image copy $generated_image $target_image >&2
         echo "Pushed: $target_image" >&2
     fi
 fi
